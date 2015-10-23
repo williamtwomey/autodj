@@ -1,0 +1,119 @@
+#!/bin/bash
+rm -f /tmp/$USER.lock
+lockpath='/tmp'
+user=$USER;
+if [ $user == "" ];
+	user=`whoami`;
+fi
+nolock=`ls -l $lockpath/lock.* 2> /dev/null | wc -l`;
+lock=`ls $lockpath/lock.*`;
+dialog --title "WIPZ DJ Program" --msgbox "\n Welcome to the WIPZ DJ Program. \n \n Made by Will Twomey " 13 40;
+if [ "$nolock" -gt 1 ]; then
+dialog --title "Multiple lock files found" --msgbox "\n More than one lock files found. This is probably due to a power failure.\n Removing all lock files except for people who are logged in. Please press OK." 20 40
+limit=`w | cut -d \  -f 1 | uniq | wc -l`;
+limit=`expr $limit + 3`;
+declare -a names=`w | cut -d \  -f 1 | uniq | grep -v USER`;
+#Puts all logged in users into an array
+counter=0;
+for z in `echo ${names}`; do
+	znames[${counter}]=$z;
+	let counter="$counter + 1";
+done
+counter=0;
+#Counts number of lock files
+for a in `ls $lockpath/lock.* | cut -f 2 -d .`; do
+	zlock[${counter}]=$a;
+	let counter="$counter + 1";
+done
+y=0;
+counter=0;
+counter2=0;
+a=`echo ${znames[@]}`;
+b=`echo ${zlock[@]}`;
+bad=`clean_array "$a" "$b" "uniq"`;
+for x in `echo ${bad}`; do	
+	rm -f $lockpath"/lock."$x;
+done
+
+
+elif [ $nolock -lt 1 ]; then
+#START DJ
+echo > $lockpath/lock.$user;
+while [ 0 ]; do
+dialog --title "WIPZ DJ Menu" --menu "Choose one of the following or press <Cancel> to exit" 11 40 2 "1" "Go Live" "2" "Go on Auto and Exit" 2>/tmp/ans;
+if [ $? = 1 ]; then
+        rm -f /tmp/ans
+	rm -f $lockpath/lock.$user
+        clear
+        exit 0
+fi
+R="`cat /tmp/ans`";
+if [ "$R" = 1 ]; then
+        dialog --title "Go Live?" --yesno "\n Are you sure you want to go live? \n " 7 30;
+        if [ $? = 0 ]; then
+		echo > /tmp/live.lck
+		echo > /tmp/disclaimer.lck
+                dialog --title "WIPZ: Disclaimer Playing" --msgbox "\n Disclaimer will play after the end of the next song. This may take up to 3 minutes, depending on the song currently playing! BE PATIENT!\n Please press OK." 20 40;
+			if [ $? = 0 ]; then
+			clear;
+			echo "Waiting for current song to finish; please wait."
+                        	while [ -a /tmp/disclaimer.lck ]; do
+					sleep 1
+				done
+			fi
+			dialog --title "WIPZ Live (On Air)" --msgbox "\n ===IMPORTANT===\nDisclaimer is done, you're live. \n\nTo go back on auto and exit push OK." 20 40;
+				clear
+				echo "Cleaning up, will take a few seconds... do not close!"
+				sleep 10
+				rm -f /tmp/ans
+				rm -f $lockpath/lock.$user
+				clear
+				kill -9 $(cat /proc/$$/stat | cut -d " " -f 4);
+				exit 0
+        else
+                continue
+        fi
+elif [ "$R" = 2 ]; then
+        dialog --title "Auto" --yesno "\n Are you ready to go off the air? \n This will log you off the DJ program \n" 10 20
+        if [ $? = 0 ]; then
+		rm -f /tmp/live.lck
+                rm -f $lockpath/lock.$user;
+		clear;
+		kill -9 $(cat /proc/$$/stat | cut -d " " -f 4);
+		sleep 10;
+		exit 0;
+        else
+                continue
+        fi
+fi
+done
+
+#END DJ
+
+fi
+if [ -a "$lock" ]; then
+
+	if [ -a $lockpath/lock.$user ]; then
+	dialog --title "User already logged in." --menu "You are already logged in. \n \n If this is incorrect, you may log yourself off here and that should resolve the problem." 11 40 2 "1" "Log all instances of `whoami` off" "2" "No thanks, I'd like to exit" 2>/tmp/ans
+	R="echo `cat /tmp/ans`"
+		if [ $R = 1 ]; then
+			rm -f /tmp/lock.$user
+			kill -9 $(cat /proc/$$/stat | cut -d " " -f 4)
+			clear
+			exit 0
+		elif [ $R = 2 ]; then
+			clear
+			exit 0
+		else
+			clear
+			exit 0
+		fi
+	else	
+	for x in `w | cut -d \  -f 1`; do
+		if [ "$x" == `echo $lockpath/lock.* | cut -f 2 -d .` ]; then
+		dialog --title "DJ already logged on." --msgbox "A DJ is currently logged in. \n \n Please wait for them to get off, or check the DJ machine to see if another terminal is open them logged in." 20 30
+		exit;
+		fi
+	done
+	fi
+fi

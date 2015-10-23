@@ -1,0 +1,6 @@
+#!/bin/bash
+#It's a filthy hack, but jack.plubming
+#dies randomly.
+while true; do
+jack.plumbing
+done

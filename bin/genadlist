@@ -1,0 +1,3 @@
+#!/bin/bash
+loc="/home/autodj"
+find /music/ads/ -name '*.ogg' | cat -n > $loc/adlist;

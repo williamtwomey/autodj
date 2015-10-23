@@ -1,0 +1,6 @@
+#!/bin/bash
+loc="/home/autodj"
+#find /music/*\.* | cat -n > $loc/playlist
+
+
+find /music/autoplayer -name '*.*' | cat -n > $loc/playlist;

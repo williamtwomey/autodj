@@ -1,0 +1,90 @@
+#!/bin/bash -x
+# this handles our auto and switches to the dj when ready
+case "$1" in
+  start)
+  	truefalse="false";
+	rm -f /tmp/ans
+	rm -f /tmp/*.lock;
+	rm -f /tmp/*.lck;
+	sudo -u autodj jackd -v -d oss -i 0 -o 2 2>/dev/null &
+	sleep 5;
+	su autodj /home/autodj/bin/jackplumbingloop &
+	sleep 5;
+	sudo -u autodj icecast -c /home/autodj/icecast.xml.dist -b;
+	sleep 5;
+	sudo -u autodj mplayer -ao jack:name=moo /home/autodj/blank.ogg &
+	sleep 1;
+	sudo -u autodj oddcastv3 -c /home/autodj/oddcast_LAME.cfg -p moo 2>/dev/null &
+	sleep 5;
+	sudo -u autodj mplayer -quiet -ao jack:port=oddcastv3:name=playme /home/autodj/startup.ogg
+	sleep 5;
+	R=0
+	truefalse="true";
+	COUNT=0
+	while [ $truefalse = "true" ]; do
+	endrange=$(tail -n 1 /home/autodj/playlist | cut -f 1);
+        randfile=$((RANDOM%$endrange+2));
+        autofile=$(sed -n "$randfile"p /home/autodj/playlist | cut -f 2);
+        adendrange=$(tail -n 1 /home/autodj/adlist | cut -f 1);
+        adrandfile=$((RANDOM%$adendrange+2));
+	ad=$(sed -n "$randfile"p /home/autodj/adlist | cut -f 2);
+		if [ -a /tmp/live.lck ]; 
+			then
+			rm -f /tmp/ans
+			sudo -u autodj mplayer -quiet -ao jack:port=oddcastv3:name=playme /home/autodj/disclaimer.flac;
+			rm /tmp/disclaimer.lck;
+			/home/autodj/bin/record &
+			sleep 2;
+			sudo -u autodj mplayer -quiet -ao jack:port=oddcastv3:name=playme http://localhost:8000/music.mp3;
+			sleep 1;
+			rm -f /tmp/live.lck;
+			rm -f /tmp/webcam.lck
+			continue;
+		else
+			rm -f /tmp/lock.*
+			rm -f /tmp/ans;
+			if [ $COUNT -eq 4 ]; then
+				sudo -u autodj mplayer -quiet -ao jack:port=oddcastv3:name=playme "$ad";
+				COUNT=0
+			else
+				killall -9 mplayer
+				sudo -u autodj mplayer -quiet -ao jack:port=oddcastv3:name=playme "$autofile"; 
+				COUNT=`expr $COUNT + 1`
+			fi
+		fi
+	done
+	;;
+
+  stop)
+  	killall -e -9 mplayer
+	killall -e -9 jackd
+	killall -e -9 oddcastv3
+	killall -e -9 icecast
+	killall -e -9 autodj
+	killall -e -9 jack.plumbing
+	killall -e -9 jackplumbingloop
+	;;
+
+  override)
+  	killall -e -9 mplayer
+	;;
+  
+  restart)
+	killall -e -9 mplayer
+        killall -e -9 jackd
+        killall -e -9 oddcastv3
+        killall -e -9 icecast
+        killall -e -9 autodj
+	sleep 1
+	sudo /home/autodj/bin/autodj start
+	;;
+
+
+  *)
+  	 N=/etc/init.d/${0##*/}
+	 echo "Usage: $N {start|stop}"
+	 exit 1
+	 ;;
+esac
+
+exit 0

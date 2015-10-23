@@ -1,0 +1,5 @@
+#!/bin/bash
+proc=`ps -C bash | sed 's/^ //' | cut -f1 -d " "`
+for x in $proc; do
+	sudo kill -9 $x
+done

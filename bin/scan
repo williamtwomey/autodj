@@ -1,0 +1,41 @@
+#!/bin/bash
+#This script checks to the
+#status of the local and
+#remote services. DJ station
+#being offline is NORMAL unless
+#someone is forwarding the port
+#and logged in via the dj script.
+#(THIS IS NOT IMPLEMENTED ANYWHERE)
+icecast=`ps -C icecast | wc -l`
+oddcast=`ps -C oddcastv3 | wc -l`
+jackd=`ps -C jackd | wc -l`
+mplayer=`ps -C mplayer | wc -l`
+port=8000
+streamport=`nmap localhost -p $port | grep $port | cut -f 2 -d " "`
+#The below will only be online if a dj is logged in and the tunnel is created
+if [ "$streamport" = "open" ] ; then
+	dj="[ Online ]"
+else
+	dj="[ Offline ]"
+fi
+if [ $icecast -gt 1 ]; then
+	icecast="[ Online ]"
+else
+	icecast="[ Offline ]"
+fi
+if [ $oddcast -gt 1 ]; then
+	oddcast="[ Online ]"
+else
+	oddcast="[ Offline ]"
+fi
+if [ $jackd -gt 1 ]; then
+	jackd="[ Online ]"
+else
+	jackd="[ Offline ]"
+fi
+if [ $mplayer -gt 1 ]; then
+        mplayer="[ Online ]"
+else
+        mplayer="[ Offline ]"
+fi
+dialog --title "Scan Results" --msgbox "DJ station  $dj \n Icecast    $icecast \n Oddcast    $oddcast \n Jackd      $jackd \n Mplayer    $mplayer" 40 40

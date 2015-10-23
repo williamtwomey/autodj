@@ -1,0 +1,4 @@
+#!/bin/bash -x
+user=`tail -n 1 /tmp/login_history`
+mkdir /music/tmp/"$user"
+mplayer -dumpstream -dumpfile /music/tmp/"$user"/"$user"-`date +%F`-$$.mp3 http://localhost:8000/music.mp3

@@ -1,0 +1,173 @@
+#!/bin/bash
+declare -x TERM=xterm-color
+declare -x TERMINFO=/etc/terminfo/x/xterm-color
+EXIT=0;
+umask 000
+if [ -z $USER ]; then
+        user=`whoami`
+else
+        user=$USER
+fi
+if [ -e /home/$user/.forward ]; then
+	email=`cat /home/$user/.forward`
+fi
+function djname
+{
+clear
+echo "Please enter a DJ name: "
+read newdj
+if [ -z $newdj ]; then
+	echo "You didn't enter anything. Log back in."
+	exit 0
+elif [ -z `echo $newdj | grep -v -i dj` ]; then
+	echo "You may not use the word 'dj' in your dj name."
+	exit 0
+fi
+echo $newdj > /home/$user/.dj
+}
+function live
+{
+clear
+rm -f /tmp/live.lck
+rm -f /tmp/webcam.lck
+echo "$user `date`" >> /tmp/.hist.log
+cat /home/$user/.dj >> /tmp/login_history
+echo $user > /tmp/live.lck
+echo $disc > /tmp/disclaimer.lck
+chmod 777 /tmp/live.lck
+chmod 777 /tmp/disclaimer.lck
+cat /home/$user/.webcam > /tmp/webcam.lck
+echo "Going on the air, please wait."
+while [ -e /tmp/disclaimer.lck ]; do
+	sleep 1s
+done
+clear
+while [ true ]; do
+clear
+echo "Type \"EXIT\" to go off the air"
+read OFF
+if [ $OFF = "EXIT" ]; then
+	leave
+fi
+done
+}
+function leave
+{
+clear
+echo "Please wait... Exiting"
+sleep 8s
+rm -f /tmp/live.lck
+rm -f /tmp/webcam.lck
+rm -f /tmp/*.lck
+clear
+kill -9 $(cat /proc/$$/stat | cut -d " " -f 4);
+exit 0
+}
+function email
+{
+clear
+echo "Please enter an email address: "
+read email
+echo $email > /home/$user/.forward
+}
+function webcam
+{
+clear
+echo "Would you like to enable the webcam?"
+echo
+echo "Type 0 for no and 1 for yes"
+read cambool
+if [ $cambool == "0" ] || [ $cambool == "1" ]; then
+echo $cambool > /home/$user/.webcam
+else
+echo "You entered an invalid entry. Exiting."
+exit
+fi
+}
+function disclaimer
+{
+clear
+echo "Please type the filename of a disclaimer from the list below: "
+cd /home/disclaimers
+for x in *; do
+echo $x
+done
+echo 
+echo "Disclaimer: "
+read disc
+if [ -e /home/disclaimers/$disc ]; then
+	echo $disc > /home/$user/.disclaimer
+else
+	echo "You did not pick a correct filename"
+fi
+}
+while [ $EXIT -ne 1 ]; do
+if [ -z `cat /home/$user/.disclaimer` ]; then
+	disclaimer
+else
+        disc=`cat /home/$user/.disclaimer`
+fi
+if [ -z "`cat /home/$user/.dj`" ]; then
+        djname
+else
+	dj=`cat /home/$user/.dj`
+fi
+clear
+if [ -z "`cat ~/.dj`" ]; then
+djname
+fi
+if [ -z "`cat /home/$user/.webcam`" ]; then
+webcam
+else
+cam=`cat /home/$user/.webcam`
+fi
+/home/autodj/bin/scheduled_dj.sh
+sleep 10
+clear
+echo
+echo
+echo
+echo "=============================================="
+echo "	                WIPZ DJ Program            "
+echo "                                            "
+echo "                 Username: $user            "
+echo "                 DJ Name: $dj               "
+echo "                 Email: $email              "
+echo "                 Disclaimer: $disc          "
+echo "                 Webcam Enabled: $cam	  "
+echo "=============================================="
+echo
+echo
+echo
+echo "1. Go Live"
+echo "2. Enable Webcam"
+echo "3. Set DJ Name"
+echo "4. Set Email"
+echo "5. Set Disclaimer"
+echo "6. Change Password"
+echo "7. Exit"
+echo
+echo "Option: "
+read OPT
+if [ $OPT -eq 1 ]; then
+	live
+elif [ $OPT -eq 2 ]; then
+	webcam
+elif [ $OPT -eq 3 ]; then
+	djname
+elif [ $OPT -eq 4 ]; then
+	email
+elif [ $OPT -eq 5 ]; then
+	disclaimer
+elif [ $OPT -eq 6 ]; then
+	clear
+	echo "Enter your current password, and then"
+	echo "enter your new password twice."
+	echo
+	echo "Please note, nothing will show on the screen as you type"
+	echo
+	passwd
+elif [ $OPT -eq 7 ]; then
+	leave
+fi
+done

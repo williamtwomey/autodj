@@ -1,0 +1,2 @@
+(connect "playme:out_0" "oss:playback_1")
+(connect "playme:out_1" "oss:playback_2")
