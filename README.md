@@ -1,5 +1,7 @@
 # autodj
 
+Co-written with Mike Goll
+
 This setup assumes the following. Feel free to go through the scripts and change things as need be. No doubt your setup will need tweaking.
 
 Some things you will NEED to change.
